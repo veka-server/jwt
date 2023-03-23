@@ -119,7 +119,7 @@ class JWT implements MiddlewareInterface
 
         try {
             $authHeader = $request->getServerParams()['HTTP_AUTHORIZATION'] ?? '';
-            if(empty($authHeader)){
+            if(!empty($authHeader)){
                 $temp_header = explode(" ", $authHeader);
                 $jwt = $temp_header[1] ?? '';
             }

@@ -74,6 +74,18 @@ class JWT implements MiddlewareInterface
         return \Firebase\JWT\JWT::decode($jwt, new Key($this->public_key, $this->algorithm));
     }
 
+    public static function extractPage($request_uri, $script_name){
+
+        $url = urldecode($request_uri );
+
+        $pos = strpos($url, '?');
+        return '/'. trim(
+                $pos !== false
+                    ?   substr($url, 0, $pos)
+                    :   $url,
+                '/');
+    }
+
     private static function cleanPath($url){
 
         $len = strlen($url);
@@ -96,7 +108,9 @@ class JWT implements MiddlewareInterface
 
     private function authorise(ServerRequestInterface $request) :Response
     {
-        $uri = $request->getServerParams()['REQUEST_URI'] ?? '';
+        $ServerParams = $request->getServerParams();
+        $uri = self::extractPage($ServerParams['REQUEST_URI'], $ServerParams['SCRIPT_NAME']);
+
         foreach ($this->exclude_url as $url){
             if($this->checkURI($url, $uri)){
                 return new Response(200);

@@ -124,7 +124,7 @@ class JWT implements MiddlewareInterface
                 $jwt = $temp_header[1] ?? '';
             }
 
-            $this->decode($jwt ?? null);
+            $this->decode($jwt ?? '');
 
             $errorCode = 200;
 

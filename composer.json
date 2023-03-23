@@ -1,0 +1,22 @@
+{
+    "name": "veka-server/jwt",
+    "description": "Un middleware minimaliste pour firebase/php-jwt",
+    "license": "MIT",
+    "keywords": ["jwt","minimalist","PSR-15","firebase/php-jwt"],
+    "authors": [
+        {
+            "name": "Vanhaezebrouck Nicolas",
+            "email": "contact@veka-server.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "VekaServer\\JWT\\" : "src/"
+        }
+    },
+    "require": {
+        "psr/http-message": "^1.0",
+        "firebase/php-jwt": "^6.4",
+        "nyholm/psr7": "^1.3"
+    }
+}

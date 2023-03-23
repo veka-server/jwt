@@ -1,11 +1,31 @@
 # JWT
 Un middleware minimaliste pour firebase/php-jwt
+basée sur https://github.com/firebase/php-jwt
 
 ## Installation
 
 Via composer
 ```
 composer require veka-server/jwt
+```
+
+## Utilisation des tokens
+```php
+
+        $data = ['id_user' =>555];
+
+        /** @var VekaServer\JWT\JWT $jwt */
+        $jwt = Container::getInstance()->get('JWT');
+        $jwtToken = $jwt->getToken($data);
+
+        $decoded = $jwt->decode($jwtToken);
+
+        $retour = [
+                "message" => "Successful login",
+                "jwt" => $jwtToken,
+                "expireAt" => $decoded->exp
+        ];
+
 ```
 
 ## Utiliser le router comme un middleware PSR-15

@@ -15,8 +15,8 @@ $Dispatcher = new VekaServer\Dispatcher\Dispatcher();
 
 // creer le jwt
 $jwt = new \App\classe\JWT(
-                  $config->get('JWT_PRIVATE_KEY'), // private_key
-                  $config->get('JWT_PUBLIC_KEY'), // public_key
+                  $private, // private_key
+                  $public, // public_key
                   'localhost:8000', // iss
                   3600, // expire time token -- facultatif default = 3600
                   'RS256', // algorithm de chiffrement -- facultatif default = RS256

@@ -23,7 +23,7 @@ class JWT implements MiddlewareInterface
     private string $expireTimeToken;
     private string $iss; // créateur (issuer) du jeton
     private string $aud; // audience du jeton
-    private array $exclude_url = []; // list url not require token
+    public const ATTRIBUTE = 'JWT_ATTRIBUTE';
 
     public function __construct(String $private_key
                                 ,String $public_key
@@ -41,13 +41,8 @@ class JWT implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler) :ResponseInterface
     {
-        $authResponse = $this->authorise($request);
-
-        if ($authResponse->getStatusCode() === 200) {
-            return $handler->handle($request);
-        }
-
-        return $authResponse;
+        $this->authorise($request);
+        return $handler->handle($request);
     }
 
     public function getToken($data = []) :string
@@ -74,48 +69,14 @@ class JWT implements MiddlewareInterface
         return \Firebase\JWT\JWT::decode($jwt, new Key($this->public_key, $this->algorithm));
     }
 
-    public static function extractPage($request_uri, $script_name){
-
-        $url = urldecode($request_uri );
-
-        $pos = strpos($url, '?');
-        return '/'. trim(
-                $pos !== false
-                    ?   substr($url, 0, $pos)
-                    :   $url,
-                '/');
-    }
-
-    private static function cleanPath($url){
-
-        $len = strlen($url);
-        if ($len <= 0) {
-            return '';
-        }
-
-        // Fix missing begin-/
-        if ($url[0] != '/') {
-            $url = '/' . $url;
-        }
-
-        // Fix trailing /
-        if ($len > 1 && $url[$len - 1] == '/') {
-            $url = substr($url, 0, -1);
-        }
-
-        return $url;
-    }
-
-    private function authorise(ServerRequestInterface $request) :Response
+    private function authorise(ServerRequestInterface &$request) :void
     {
-        $ServerParams = $request->getServerParams();
-        $uri = self::extractPage($ServerParams['REQUEST_URI'], $ServerParams['SCRIPT_NAME']);
-
-        foreach ($this->exclude_url as $url){
-            if($this->checkURI($url, $uri)){
-                return new Response(200);
-            }
-        }
+        $attr = [
+            'success' => true,
+            "jwt" => '',
+            "data" => null,
+            'error' => [],
+        ];
 
         try {
             $authHeader = $request->getServerParams()['HTTP_AUTHORIZATION'] ?? '';
@@ -124,56 +85,21 @@ class JWT implements MiddlewareInterface
                 $jwt = $temp_header[1] ?? '';
             }
 
-            $this->decode($jwt ?? '');
+            $attr['jwt'] = $jwt;
 
-            $errorCode = 200;
+            $decoded = $this->decode($jwt ?? '');
+
+            $attr['data'] = $decoded->data ?? null;
 
         }catch (Exception $e){
-
-            $jsonBody = [
-                'success' => false,
-                "jwt" => $jwt ?? null,
-                'error' => [
-                    'message' => $e->getMessage(),
-                    'help' => 'Token JWT incorrect or missing. Please add header => Authorization: Bearer [token]',
-                ],
+            $attr['success'] = false;
+            $attr['error'] = [
+                'message' => $e->getMessage(),
+                'help' => 'Token JWT incorrect or missing. Please add header => Authorization: Bearer [token]',
             ];
-
-            $reason = 'Unauthorized';
-            $jsonBody = json_encode($jsonBody);
-            $errorCode = 401;
         }
 
-        return new Response($errorCode, [], ($jsonBody ?? null), '1.1', ($reason ?? null) );
+        $request = $request->withAttribute(self::ATTRIBUTE, $attr);
     }
 
-    /**
-     * @param string $regex
-     * @param string $path
-     * @return bool
-     */
-    public function checkURI(string $regex, string $path) :bool
-    {
-        $regex =self::cleanPath($regex);
-        $path =self::cleanPath($path);
-
-        if(empty($regex)){
-            return false;
-        }
-
-        if($regex == $path) {
-            return true;
-        }
-
-        // Prevent @ collision
-        $regex = str_replace('@', '\\@', $regex);
-        $test = preg_match('@^' . $regex . '$@', $path);
-
-        return (bool)($test);
-    }
-
-    public function excludeUrl($url)
-    {
-        $this->exclude_url[] = $url;
-    }
 }
